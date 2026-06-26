@@ -216,8 +216,8 @@ export default function App() {
     setOptions(prev => ({ ...prev, [name]: value }));
   };
 
-  const analyzeScore = async () => {
-    if (!uploadFile) {
+  const analyzeScore = async (scoreFile = uploadFile) => {
+    if (!scoreFile) {
       setMessage(t.noFile);
       return;
     }
@@ -225,7 +225,7 @@ export default function App() {
     setMessage(t.analyzing);
     try {
       const form = new FormData();
-      form.append('score', uploadFile);
+      form.append('score', scoreFile);
       const response = await fetch('/api/score', { method: 'POST', body: form });
       if (!response.ok) throw new Error(await readError(response, t.errorFallback));
       const data = await response.json();
@@ -338,7 +338,13 @@ export default function App() {
                   setFile(next);
                   if (next) setAlphaTex('');
                   setScoreInfo(null);
-                  setMessage(next ? t.fileSelected(next.name) : '');
+                  setSelectedTracks([0]);
+                  setOptions(prev => ({ ...prev, endBar: '' }));
+                  if (next) {
+                    analyzeScore(next);
+                  } else {
+                    setMessage('');
+                  }
                 }}
               />
               <span className="file-drop-icon" aria-hidden="true">
@@ -363,15 +369,19 @@ export default function App() {
                   setAlphaTex(event.target.value);
                   if (event.target.value.trim()) setFile(null);
                   setScoreInfo(null);
+                  setSelectedTracks([0]);
+                  setOptions(prev => ({ ...prev, endBar: '' }));
                 }}
               />
             </label>
 
-            <div className="actions">
-              <button className="secondary" onClick={analyzeScore} disabled={!canSubmit}>
-                {t.analyzeBtn}
-              </button>
-            </div>
+            {alphaTex.trim() ? (
+              <div className="actions">
+                <button className="secondary" onClick={() => analyzeScore()} disabled={!canSubmit}>
+                  {t.analyzeBtn}
+                </button>
+              </div>
+            ) : null}
 
             {scoreInfo && (
               <div className="score-info">
