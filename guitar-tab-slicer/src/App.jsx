@@ -313,20 +313,15 @@ export default function App() {
 
       <main className="page-shell">
         <section className="hero">
-          <div className="hero-text">
-            <p className="eyebrow">{t.eyebrow}</p>
-            <h1>
-              <span>{t.h1Line1}</span>
-              <span className="h1-accent">{t.h1Line2}</span>
-            </h1>
-            <p className="hero-copy">{t.heroCopy}</p>
-          </div>
-          <button className="primary big" onClick={renderZip} disabled={!canSubmit}>
-            {t.zipBtn}
-          </button>
+          <p className="eyebrow">{t.eyebrow}</p>
+          <h1>
+            <span>{t.h1Line1}</span>
+            <span className="h1-accent">{t.h1Line2}</span>
+          </h1>
+          <p className="hero-copy">{t.heroCopy}</p>
         </section>
 
-        <section className="grid">
+        <section className="upload-zone">
           <div className="card upload-card">
             <h2>{t.sec1}</h2>
             <label className="file-drop">
@@ -362,7 +357,7 @@ export default function App() {
             <label className="field">
               <span>{t.alphaTexLabel}</span>
               <textarea
-                rows={7}
+                rows={4}
                 placeholder={t.alphaTexPlaceholder}
                 value={alphaTex}
                 onChange={event => {
@@ -391,7 +386,9 @@ export default function App() {
               </div>
             )}
           </div>
+        </section>
 
+        <section className="options-grid">
           <div className="card">
             <h2>{t.sec2}</h2>
             <div className="two-col">
@@ -601,6 +598,12 @@ export default function App() {
             </label>
           </div>
         </section>
+
+        <div className="export-area">
+          <button className="primary export-btn" onClick={renderZip} disabled={!canSubmit}>
+            {t.zipBtn}
+          </button>
+        </div>
 
         <section className={`status ${message ? 'visible' : ''}`}>
           {busy && <span className="spinner" aria-hidden="true" />}

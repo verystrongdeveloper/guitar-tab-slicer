@@ -135,17 +135,11 @@ button:disabled {
 .hero {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-  padding: 40px 44px;
-  border: 1px solid var(--border);
-  border-radius: 32px;
-  background: rgba(255, 255, 255, 0.055);
-  box-shadow:
-    0 0 0 1px rgba(244, 175, 77, 0.06) inset,
-    0 32px 80px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(20px);
+  text-align: center;
+  gap: 0;
+  padding: 56px 24px 40px;
   overflow: hidden;
 }
 
@@ -154,13 +148,8 @@ button:disabled {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(ellipse 70% 60% at 0% 100%, rgba(244, 175, 77, 0.09), transparent 70%);
+  background: radial-gradient(ellipse 60% 70% at 50% 0%, rgba(244, 175, 77, 0.10), transparent 70%);
   pointer-events: none;
-}
-
-.hero-text {
-  flex: 1;
-  min-width: 0;
 }
 
 .eyebrow {
@@ -186,6 +175,7 @@ h1, h2 {
 h1 {
   display: flex;
   flex-direction: column;
+  align-items: center;
   max-width: 720px;
   font-size: clamp(2.1rem, 4vw, 4rem);
   line-height: 1.06;
@@ -211,19 +201,48 @@ h2 {
 }
 
 .hero-copy {
-  max-width: 640px;
-  margin: 20px 0 0;
+  max-width: 560px;
+  margin: 16px 0 0;
   color: var(--cream-72);
   font-size: 1rem;
   line-height: 1.75;
 }
 
-/* ── Grid ── */
-.grid {
+/* ── Upload zone ── */
+.upload-zone {
+  max-width: 680px;
+  margin: 0 auto 24px;
+}
+
+.upload-zone .card {
+  padding: 32px;
+}
+
+.upload-zone .file-drop {
+  min-height: 200px;
+}
+
+/* ── Options grid ── */
+.options-grid {
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  margin-top: 16px;
+  margin-top: 0;
+}
+
+/* ── Export area ── */
+.export-area {
+  display: flex;
+  justify-content: center;
+  margin: 36px 0 8px;
+}
+
+.export-btn {
+  min-width: 260px;
+  height: 72px;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  box-shadow: 0 16px 48px rgba(244, 175, 77, 0.38);
 }
 
 /* ── Cards ── */
@@ -241,10 +260,6 @@ h2 {
   border-color: var(--border-hover);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
   transform: translateY(-2px);
-}
-
-.upload-card {
-  grid-row: span 2;
 }
 
 /* ── File drop ── */
@@ -396,7 +411,6 @@ h2 {
   font-size: 1rem;
   flex-shrink: 0;
 }
-
 .secondary {
   background: rgba(255, 255, 255, 0.1);
   color: var(--cream);
@@ -571,22 +585,12 @@ h2 {
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
+  .options-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
   .hero {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 32px 28px;
-  }
-
-  .primary.big {
-    width: 100%;
-  }
-
-  .upload-card {
-    grid-row: auto;
+    padding: 40px 24px 28px;
   }
 }
 
@@ -602,11 +606,24 @@ h2 {
     border-radius: 20px;
   }
 
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+
   .two-col {
     grid-template-columns: 1fr;
   }
 
   h1 {
     font-size: clamp(1.8rem, 8vw, 2.8rem);
+  }
+
+  .export-btn {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .export-area {
+    padding: 0 4px;
   }
 }
