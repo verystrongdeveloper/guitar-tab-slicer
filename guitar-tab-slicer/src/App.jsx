@@ -197,11 +197,14 @@ function formatTrackName(track) {
   return `${track.index + 1}. ${track.name || `Track ${track.index + 1}`}`;
 }
 
+const desktopApi = typeof window !== 'undefined' ? window.guitarTabSlicer : null;
+
 export default function App() {
   const [lang, setLang] = useState('en');
   const t = translations[lang];
 
   const [file, setFile] = useState(null);
+  const [desktopFile, setDesktopFile] = useState(null);
   const [alphaTex, setAlphaTex] = useState('');
   const [scoreInfo, setScoreInfo] = useState(null);
   const [selectedTracks, setSelectedTracks] = useState([0]);
@@ -209,26 +212,48 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
-  const uploadFile = useMemo(() => makeUploadFile(file, alphaTex), [file, alphaTex]);
-  const canSubmit = Boolean(uploadFile) && !busy;
+  const isDesktop = Boolean(desktopApi?.isDesktop);
+  const uploadFile = useMemo(() => isDesktop ? null : makeUploadFile(file, alphaTex), [file, alphaTex, isDesktop]);
+  const hasDesktopSource = Boolean(desktopFile) || Boolean(alphaTex.trim());
+  const canSubmit = (isDesktop ? hasDesktopSource : Boolean(uploadFile)) && !busy;
+  const selectedFileName = isDesktop ? desktopFile?.name : file?.name;
 
   const setOption = (name, value) => {
     setOptions(prev => ({ ...prev, [name]: value }));
   };
 
-  const analyzeScore = async (scoreFile = uploadFile) => {
-    if (!scoreFile) {
+  const getDesktopSource = (selected = desktopFile) => {
+    if (selected) return { type: 'file', token: selected.token };
+    const text = alphaTex.trim();
+    if (text) return { type: 'alphatex', text };
+    return null;
+  };
+
+  const resetScoreSelection = () => {
+    setScoreInfo(null);
+    setSelectedTracks([0]);
+    setOptions(prev => ({ ...prev, endBar: '' }));
+  };
+
+  const analyzeScore = async (scoreFile = uploadFile, selectedDesktopFile = desktopFile) => {
+    const desktopSource = isDesktop ? getDesktopSource(selectedDesktopFile) : null;
+    if (isDesktop ? !desktopSource : !scoreFile) {
       setMessage(t.noFile);
       return;
     }
     setBusy(true);
     setMessage(t.analyzing);
     try {
-      const form = new FormData();
-      form.append('score', scoreFile);
-      const response = await fetch('/api/score', { method: 'POST', body: form });
-      if (!response.ok) throw new Error(await readError(response, t.errorFallback));
-      const data = await response.json();
+      let data;
+      if (isDesktop) {
+        data = await desktopApi.analyzeScore({ source: desktopSource });
+      } else {
+        const form = new FormData();
+        form.append('score', scoreFile);
+        const response = await fetch('/api/score', { method: 'POST', body: form });
+        if (!response.ok) throw new Error(await readError(response, t.errorFallback));
+        data = await response.json();
+      }
       setScoreInfo(data);
       setSelectedTracks(data.tracks?.length ? [data.tracks[0].index] : [0]);
       setOptions(prev => ({ ...prev, endBar: data.barCount || '' }));
@@ -238,6 +263,20 @@ export default function App() {
       setMessage(error.message);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const selectDesktopFile = async () => {
+    try {
+      const selected = await desktopApi.selectScoreFile();
+      if (!selected) return;
+      setDesktopFile(selected);
+      setFile(null);
+      setAlphaTex('');
+      resetScoreSelection();
+      await analyzeScore(null, selected);
+    } catch (error) {
+      setMessage(error.message || t.errorFallback);
     }
   };
 
@@ -252,30 +291,42 @@ export default function App() {
   };
 
   const renderZip = async () => {
-    if (!uploadFile) {
+    const desktopSource = isDesktop ? getDesktopSource() : null;
+    if (isDesktop ? !desktopSource : !uploadFile) {
       setMessage(t.noFile);
       return;
     }
     setBusy(true);
     setMessage(t.rendering);
     try {
-      const form = new FormData();
-      form.append('score', uploadFile);
-      form.append('tracks', JSON.stringify(selectedTracks));
-      for (const [key, value] of Object.entries(options)) {
-        form.append(key, String(value));
+      const renderOptions = { ...options };
+      if (!renderOptions.endBar) {
+        renderOptions.endBar = String(scoreInfo?.barCount || 1);
       }
-      if (!options.endBar) {
-        form.set('endBar', String(scoreInfo?.barCount || 1));
+
+      if (isDesktop) {
+        const result = await desktopApi.renderZip({
+          source: desktopSource,
+          options: renderOptions,
+          selectedTracks
+        });
+        setMessage(result?.canceled ? t.ready : t.rendered);
+      } else {
+        const form = new FormData();
+        form.append('score', uploadFile);
+        form.append('tracks', JSON.stringify(selectedTracks));
+        for (const [key, value] of Object.entries(renderOptions)) {
+          form.append(key, String(value));
+        }
+        const response = await fetch('/api/render', { method: 'POST', body: form });
+        if (!response.ok) throw new Error(await readError(response, t.errorFallback));
+        const blob = await response.blob();
+        const filename =
+          response.headers.get('content-disposition')?.match(/filename="?([^";]+)"?/i)?.[1] ||
+          'tab_overlay_slices.zip';
+        downloadBlob(blob, filename);
+        setMessage(t.rendered);
       }
-      const response = await fetch('/api/render', { method: 'POST', body: form });
-      if (!response.ok) throw new Error(await readError(response, t.errorFallback));
-      const blob = await response.blob();
-      const filename =
-        response.headers.get('content-disposition')?.match(/filename="?([^";]+)"?/i)?.[1] ||
-        'tab_overlay_slices.zip';
-      downloadBlob(blob, filename);
-      setMessage(t.rendered);
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -324,33 +375,45 @@ export default function App() {
         <section className="upload-zone">
           <div className="card upload-card">
             <h2>{t.sec1}</h2>
-            <label className="file-drop">
-              <input
-                type="file"
-                accept=".gp,.gp3,.gp4,.gp5,.gpx,.gpif,.musicxml,.xml,.alphatex,.at,.txt"
-                onChange={event => {
-                  const next = event.target.files?.[0] || null;
-                  setFile(next);
-                  if (next) setAlphaTex('');
-                  setScoreInfo(null);
-                  setSelectedTracks([0]);
-                  setOptions(prev => ({ ...prev, endBar: '' }));
-                  if (next) {
-                    analyzeScore(next);
-                  } else {
-                    setMessage('');
-                  }
-                }}
-              />
-              <span className="file-drop-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  <polyline points="17 8 12 3 7 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                </svg>
-              </span>
-              <span>{file ? t.fileSelected(file.name) : t.fileDrop}</span>
-            </label>
+            {isDesktop ? (
+              <button type="button" className="file-drop file-drop-button" onClick={selectDesktopFile} disabled={busy}>
+                <span className="file-drop-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <polyline points="17 8 12 3 7 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                  </svg>
+                </span>
+                <span>{selectedFileName ? t.fileSelected(selectedFileName) : t.fileDrop}</span>
+              </button>
+            ) : (
+              <label className="file-drop">
+                <input
+                  type="file"
+                  accept=".gp,.gp3,.gp4,.gp5,.gpx,.gpif,.musicxml,.xml,.alphatex,.at,.txt"
+                  onChange={event => {
+                    const next = event.target.files?.[0] || null;
+                    setFile(next);
+                    setDesktopFile(null);
+                    if (next) setAlphaTex('');
+                    resetScoreSelection();
+                    if (next) {
+                      analyzeScore(next);
+                    } else {
+                      setMessage('');
+                    }
+                  }}
+                />
+                <span className="file-drop-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <polyline points="17 8 12 3 7 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                  </svg>
+                </span>
+                <span>{selectedFileName ? t.fileSelected(selectedFileName) : t.fileDrop}</span>
+              </label>
+            )}
 
             <div className="divider"><span>{t.or}</span></div>
 
@@ -362,10 +425,11 @@ export default function App() {
                 value={alphaTex}
                 onChange={event => {
                   setAlphaTex(event.target.value);
-                  if (event.target.value.trim()) setFile(null);
-                  setScoreInfo(null);
-                  setSelectedTracks([0]);
-                  setOptions(prev => ({ ...prev, endBar: '' }));
+                  if (event.target.value.trim()) {
+                    setFile(null);
+                    setDesktopFile(null);
+                  }
+                  resetScoreSelection();
                 }}
               />
             </label>
