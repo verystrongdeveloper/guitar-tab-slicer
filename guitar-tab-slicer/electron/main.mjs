@@ -106,7 +106,8 @@ function createWindow() {
     height: 900,
     minWidth: 920,
     minHeight: 680,
-    backgroundColor: '#11100f',
+    autoHideMenuBar: true,
+    backgroundColor: '#1f2227',
     title: 'Guitar Tab Slicer',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
