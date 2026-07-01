@@ -1,44 +1,104 @@
 # Guitar Tab Slicer
 
-GP/Guitar Pro 파일 또는 AlphaTex를 업로드하면 선택한 마디 범위를 N마디 단위로 나눠 PNG 이미지로 렌더링하고 ZIP으로 내려주는 웹서비스 MVP입니다. 영상 하단에 악보 오버레이를 얹는 용도를 기준으로 만들었습니다.
+[English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md)
 
-## 주요 기능
+Guitar Tab Slicer is a desktop app for slicing Guitar Pro and AlphaTex scores into PNG overlays for video editing. Select a score file or paste AlphaTex text, choose the bar range and style options, then export a ZIP file containing bar-based PNG slices and `manifest.json`.
 
-- `.gp`, `.gp3`, `.gp4`, `.gp5`, `.gpx`, `.gpif`, `.musicxml`, `.xml`, `.alphatex`, `.txt` 업로드
-- AlphaTex 직접 붙여넣기
-- 이미지당 마디 수 설정: 기본 2마디
-- 시작/끝 마디 선택
-- 트랙 선택
-- Tab only / Score + Tab / Score only / Tab mixed 선택
-- PNG 폭, 배율, 여백, 마디 간격 설정
-- 글자/선 색상 설정
-- 배경색과 배경 불투명도 설정
-- 완전 투명 배경 PNG 출력
-- `manifest.json` 포함 ZIP 다운로드
+## Features
 
-## 실행
+- Score input for `.gp`, `.gp3`, `.gp4`, `.gp5`, `.gpx`, `.gpif`, `.musicxml`, `.xml`, `.alphatex`, `.at`, `.txt`
+- Direct AlphaTex paste input
+- Start bar, end bar, and bars-per-image settings
+- Track analysis and track selection
+- Notation modes: Tab only, Score + Tab, Score only, Tab mixed
+- PNG width, scale, horizontal/vertical padding, and bar spacing controls
+- Foreground color, background color, and background opacity settings
+- Fully transparent background PNG export
+- Option to hide score headers such as title and artist
+- ZIP export with PNG slices and rendering metadata in `manifest.json`
+- Windows portable executable packaging
 
-Node.js 20 이상을 권장합니다.
+## Download
+
+Download the Windows build from the release page.
+
+- `Guitar Tab Slicer 0.1.0.exe`: portable Windows app
+- `Guitar Tab Slicer 0.1.0.zip`: zipped build
+
+## How To Use
+
+1. Launch the app.
+2. Select a score file or paste AlphaTex.
+3. After analysis, choose the bar range and tracks.
+4. Adjust notation, colors, transparency, and image size options.
+5. Click `Export ZIP` to save the PNG overlay ZIP file.
+
+The generated ZIP contains files like this:
+
+```text
+01_bars_1-2.png
+02_bars_3-4.png
+...
+manifest.json
+```
+
+## Development
+
+Node.js 20 or newer is recommended.
 
 ```bash
 npm install
+```
+
+### Run The Desktop App In Development
+
+```bash
 npm run dev
 ```
 
-브라우저에서 `http://localhost:5173`을 엽니다. 개발 모드에서는 Vite가 `/api` 요청을 Express 서버로 프록시합니다.
+This starts the Vite development server and the Electron app together.
 
-## 프로덕션 실행
+### Run The Web/Server Development Mode
 
 ```bash
-npm install
+npm run dev:web
+```
+
+Open `http://localhost:5173` in your browser. In development mode, Vite proxies `/api` requests to the Express server.
+
+### Production Build
+
+```bash
 npm run build
+```
+
+### Run The Electron App
+
+```bash
 npm start
 ```
 
-기본 포트는 `3001`입니다. 필요하면 환경변수로 바꿀 수 있습니다.
+### Build Windows Release Files
 
 ```bash
-PORT=8080 npm start
+npm run desktop:dist
+```
+
+Build artifacts are created in the `release/` directory.
+
+## Server Mode
+
+You can also run only the Express server without Electron.
+
+```bash
+npm run build
+npm run serve
+```
+
+The default port is `3001`.
+
+```bash
+PORT=8080 npm run serve
 ```
 
 ## Docker
@@ -48,28 +108,36 @@ docker build -t guitar-tab-slicer .
 docker run --rm -p 3001:3001 guitar-tab-slicer
 ```
 
-그 다음 `http://localhost:3001`로 접속합니다.
+Then open `http://localhost:3001`.
 
-## 구조
+## Project Structure
 
 ```text
-server/index.mjs   Express API, alphaTab/alphaSkia 렌더링, ZIP 생성
-src/App.jsx        웹 UI
-src/styles.css     스타일
-vite.config.js     개발 서버 프록시와 빌드 설정
+electron/main.mjs           Electron main process and file select/save IPC
+electron/preload.cjs        Safe desktop API exposed to the renderer
+electron/render-service.mjs Score analysis and rendering service used by Electron
+server/index.mjs            Express API, alphaTab/alphaSkia rendering, ZIP creation
+src/App.jsx                 React UI
+src/styles.css              Screen styles
+scripts/package-win.mjs     Windows release packaging script
+vite.config.js              Vite build and development proxy configuration
 ```
 
 ## API
 
+### `GET /api/health`
+
+Checks the server status.
+
 ### `POST /api/score`
 
-멀티파트 필드 `score`에 악보 파일을 보내면 악보 메타데이터를 반환합니다.
+Send a score file in the multipart field `score` to receive score metadata.
 
 ### `POST /api/render`
 
-멀티파트 필드 `score`와 렌더 옵션을 보내면 ZIP 파일을 반환합니다.
+Send a score file in the multipart field `score` with render options to receive a ZIP file.
 
-옵션 예시:
+Example options:
 
 ```text
 barsPerImage=2
@@ -89,9 +157,10 @@ stretchForce=0.9
 hideScoreInfo=true
 ```
 
-## 참고/주의
+## Notes
 
-- 렌더링은 서버에서 처리됩니다. 실제 서비스로 배포할 때는 업로드 파일 보관 금지, 요청 크기 제한, rate limit, 작업 큐를 붙이는 것을 권장합니다.
-- 큰 GP 파일이나 다중 트랙 악보는 렌더링 시간이 길 수 있습니다.
-- AlphaSkia는 운영체제별 네이티브 패키지를 사용합니다. 이 프로젝트는 Linux/macOS/Windows 패키지를 optional dependency로 넣어두었습니다.
-- 영상 편집에서 PNG가 너무 작거나 흐리면 `이미지 폭`과 `확대 배율`을 올려 출력하세요.
+- Rendering uses alphaTab and alphaSkia.
+- Large Guitar Pro files or multi-track scores may take longer to render.
+- The desktop app is currently packaged as a Windows portable build.
+- If you deploy this as a public service, add upload size limits, rate limits, a job queue, and temporary file cleanup policies.
+- If exported PNGs look too small or blurry in a video editor, increase `Image width` and `Scale`.
