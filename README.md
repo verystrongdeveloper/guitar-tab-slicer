@@ -22,8 +22,8 @@ Guitar Tab Slicer is a desktop app for slicing Guitar Pro and AlphaTex scores in
 
 Download the Windows build from the release page.
 
-- `Guitar Tab Slicer 0.1.0.exe`: portable Windows app
-- `Guitar Tab Slicer 0.1.0.zip`: zipped build
+- `Guitar Tab Slicer 0.2.0.exe`: portable Windows app
+- `Guitar Tab Slicer 0.2.0.zip`: zipped build
 
 ## How To Use
 

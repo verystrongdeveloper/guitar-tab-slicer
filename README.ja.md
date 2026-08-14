@@ -22,8 +22,8 @@ Guitar Tab Slicer は、Guitar Pro/AlphaTex のスコアを動画編集用の PN
 
 リリースページから Windows 用ファイルをダウンロードできます。
 
-- `Guitar Tab Slicer 0.1.0.exe`: インストール不要で実行できる Windows アプリ
-- `Guitar Tab Slicer 0.1.0.zip`: ZIP 版ビルド
+- `Guitar Tab Slicer 0.2.0.exe`: インストール不要で実行できる Windows アプリ
+- `Guitar Tab Slicer 0.2.0.zip`: ZIP 版ビルド
 
 ## 使い方
 
