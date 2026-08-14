@@ -8,6 +8,7 @@ import {
   MAX_UPLOAD_BYTES,
   analyzeScoreBuffer,
   createAlphaTexScoreInput,
+  renderScorePreviewBuffer,
   renderScoreZipBuffer,
   validateScoreInput
 } from './render-service.mjs';
@@ -143,9 +144,22 @@ ipcMain.handle('score:select-file', safeHandler(async () => {
   return await rememberSelectedFile(result.filePaths[0]);
 }));
 
+ipcMain.handle('score:open-file-path', safeHandler(async payload => {
+  const filePath = typeof payload?.path === 'string' ? payload.path : '';
+  if (!filePath) {
+    throw new Error('Select a score file.');
+  }
+  return await rememberSelectedFile(filePath);
+}));
+
 ipcMain.handle('score:analyze', safeHandler(async payload => {
   const input = await readScoreSource(payload?.source);
   return analyzeScoreBuffer(input.buffer, input.originalName);
+}));
+
+ipcMain.handle('score:render-preview', safeHandler(async payload => {
+  const input = await readScoreSource(payload?.source);
+  return renderScorePreviewBuffer(input.buffer, input.originalName, buildRenderBody(payload));
 }));
 
 ipcMain.handle('score:render-zip', safeHandler(async payload => {

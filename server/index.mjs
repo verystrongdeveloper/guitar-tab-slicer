@@ -45,6 +45,12 @@ const SCORE_HEADER_FOOTER_ELEMENTS = [
   alphaTab.model.ScoreSubElement.CopyrightSecondLine,
   alphaTab.model.ScoreSubElement.ChordDiagramList
 ];
+const REST_SUB_ELEMENTS = [
+  alphaTab.model.BeatSubElement.StandardNotationRests,
+  alphaTab.model.BeatSubElement.GuitarTabRests,
+  alphaTab.model.BeatSubElement.SlashRests,
+  alphaTab.model.BeatSubElement.NumberedRests
+];
 
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: '1mb' }));
@@ -116,6 +122,27 @@ function hideScoreHeaderFooter(score) {
   }
 }
 
+function hideRestSymbols(score) {
+  const hidden = new alphaTab.model.Color(0, 0, 0, 0);
+  for (const track of score.tracks || []) {
+    for (const staff of track.staves || []) {
+      for (const bar of staff.bars || []) {
+        for (const voice of bar.voices || []) {
+          for (const beat of voice.beats || []) {
+            if (!beat.isRest) continue;
+            if (!beat.style) {
+              beat.style = new alphaTab.model.BeatStyle();
+            }
+            for (const element of REST_SUB_ELEMENTS) {
+              beat.style.colors.set(element, hidden);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 function applyScoreDisplayOptions(score, options) {
   score.stylesheet.globalDisplayTuning = true;
   if (options.hideScoreInfo) {
@@ -127,6 +154,9 @@ function applyScoreDisplayOptions(score, options) {
       alphaTab.model.ScoreSubElement.CopyrightSecondLine,
       new alphaTab.model.HeaderFooterStyle('', false, 1)
     );
+  }
+  if (!options.showRests) {
+    hideRestSymbols(score);
   }
 }
 
@@ -430,6 +460,10 @@ function buildChunks(startBar, endBar, barsPerImage) {
   return chunks;
 }
 
+function getPreviewChunk(options) {
+  return buildChunks(options.startBar, options.endBar, options.barsPerImage)[0];
+}
+
 function normalizeRenderOptions(body, score) {
   const maxBars = score.masterBars?.length || 1;
   const startBar = parseInteger(body.startBar, 1, 1, maxBars);
@@ -451,7 +485,8 @@ function normalizeRenderOptions(body, score) {
     backgroundColor: normalizeColor(body.backgroundColor, '#000000'),
     backgroundOpacity: transparent ? 0 : parseNumber(body.backgroundOpacity, 0.55, 0, 1),
     transparent,
-    hideScoreInfo: parseBoolean(body.hideScoreInfo, true)
+    hideScoreInfo: parseBoolean(body.hideScoreInfo, true),
+    showRests: parseBoolean(body.showRests, true)
   };
 }
 
@@ -521,6 +556,35 @@ app.post('/api/render', upload.single('score'), async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: `이미지 생성에 실패했습니다: ${error.message}` });
+  }
+});
+
+app.post('/api/preview', upload.single('score'), async (req, res) => {
+  try {
+    const file = requireUploadedScore(req, res);
+    if (!file) return;
+
+    await ensureAlphaSkia();
+
+    const score = loadScoreFromUpload(file.buffer);
+    const options = normalizeRenderOptions(req.body, score);
+    const trackIndexes = parseTracks(req.body.tracks, score);
+    const chunk = getPreviewChunk(options);
+    if (!chunk) {
+      res.status(422).json({ message: '미리보기를 만들 마디가 없습니다.' });
+      return;
+    }
+
+    applyScoreDisplayOptions(score, options);
+    const png = await renderChunkToPng(score, trackIndexes, options, chunk);
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', png.length);
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(png);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: `미리보기 생성에 실패했습니다: ${error.message}` });
   }
 });
 

@@ -37,6 +37,12 @@ const SCORE_HEADER_FOOTER_ELEMENTS = [
   alphaTab.model.ScoreSubElement.CopyrightSecondLine,
   alphaTab.model.ScoreSubElement.ChordDiagramList
 ];
+const REST_SUB_ELEMENTS = [
+  alphaTab.model.BeatSubElement.StandardNotationRests,
+  alphaTab.model.BeatSubElement.GuitarTabRests,
+  alphaTab.model.BeatSubElement.SlashRests,
+  alphaTab.model.BeatSubElement.NumberedRests
+];
 
 let alphaSkiaInitPromise = null;
 
@@ -105,6 +111,27 @@ function hideScoreHeaderFooter(score) {
   }
 }
 
+function hideRestSymbols(score) {
+  const hidden = new alphaTab.model.Color(0, 0, 0, 0);
+  for (const track of score.tracks || []) {
+    for (const staff of track.staves || []) {
+      for (const bar of staff.bars || []) {
+        for (const voice of bar.voices || []) {
+          for (const beat of voice.beats || []) {
+            if (!beat.isRest) continue;
+            if (!beat.style) {
+              beat.style = new alphaTab.model.BeatStyle();
+            }
+            for (const element of REST_SUB_ELEMENTS) {
+              beat.style.colors.set(element, hidden);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 function applyScoreDisplayOptions(score, options) {
   score.stylesheet.globalDisplayTuning = true;
   if (options.hideScoreInfo) {
@@ -116,6 +143,9 @@ function applyScoreDisplayOptions(score, options) {
       alphaTab.model.ScoreSubElement.CopyrightSecondLine,
       new alphaTab.model.HeaderFooterStyle('', false, 1)
     );
+  }
+  if (!options.showRests) {
+    hideRestSymbols(score);
   }
 }
 
@@ -419,6 +449,10 @@ function buildChunks(startBar, endBar, barsPerImage) {
   return chunks;
 }
 
+function getPreviewChunk(options) {
+  return buildChunks(options.startBar, options.endBar, options.barsPerImage)[0];
+}
+
 function normalizeRenderOptions(body, score) {
   const maxBars = score.masterBars?.length || 1;
   const startBar = parseInteger(body.startBar, 1, 1, maxBars);
@@ -440,7 +474,8 @@ function normalizeRenderOptions(body, score) {
     backgroundColor: normalizeColor(body.backgroundColor, '#000000'),
     backgroundOpacity: transparent ? 0 : parseNumber(body.backgroundOpacity, 0.55, 0, 1),
     transparent,
-    hideScoreInfo: parseBoolean(body.hideScoreInfo, true)
+    hideScoreInfo: parseBoolean(body.hideScoreInfo, true),
+    showRests: parseBoolean(body.showRests, true)
   };
 }
 
@@ -550,5 +585,28 @@ export async function renderScoreZipBuffer(buffer, originalName = 'score', body 
     selectedTracks: trackIndexes,
     options,
     chunks
+  };
+}
+
+export async function renderScorePreviewBuffer(buffer, originalName = 'score', body = {}) {
+  const file = validateScoreInput(buffer, originalName);
+
+  await ensureAlphaSkia();
+
+  const score = loadScoreFromUpload(file.buffer);
+  const options = normalizeRenderOptions(body, score);
+  const trackIndexes = parseTracks(body.tracks, score);
+  const chunk = getPreviewChunk(options);
+  if (!chunk) {
+    throw new Error('미리보기를 만들 마디가 없습니다.');
+  }
+
+  applyScoreDisplayOptions(score, options);
+  const png = await renderChunkToPng(score, trackIndexes, options, chunk);
+
+  return {
+    pngBase64: png.toString('base64'),
+    startBar: chunk.startBar,
+    endBar: chunk.endBar
   };
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const translations = {
   en: {
@@ -8,8 +8,14 @@ const translations = {
     heroCopy:
       'Export transparent or semi-transparent tab overlays sliced by bar range — perfect for layering over guitar tutorial videos.',
     zipBtn: 'Export ZIP',
+    previewBtn: 'Preview',
+    previewHint: 'Renders the current slice. Use previous/next to move through bars.',
+    previewEmpty: 'Click Preview to see a slice, then use previous/next to move.',
+    previewCaption: (start, end) => `Bars ${start}–${end}`,
+    previewPrev: 'Previous',
+    previewNext: 'Next',
     sec1: '1. Upload Score',
-    fileDrop: 'gp / gp5 / gpx / gpif / musicxml / alphatex',
+    fileDrop: 'Drop or click — gp / gp5 / gpx / gpif / musicxml / alphatex',
     fileSelected: name => name,
     or: 'or',
     alphaTexLabel: 'Paste AlphaTex',
@@ -39,11 +45,16 @@ const translations = {
     paddingYLabel: 'Vertical padding',
     stretchLabel: v => `Bar spacing: ${v}`,
     hideScoreInfo: 'Hide score header (title, artist)',
+    showRests: 'Show rest symbols',
+    sec5: '5. Preview',
     ready: 'Ready',
     noFile: 'Please select a file or paste AlphaTex.',
+    unsupportedFile: 'Unsupported score file type.',
     analyzing: 'Reading score…',
     analyzed: (bars, tracks) => `Done: ${bars} bars, ${tracks} tracks`,
     rendering: 'Generating PNGs and packing ZIP… Large files may take a while.',
+    previewing: 'Rendering preview…',
+    previewed: 'Preview ready.',
     rendered: 'Done! ZIP file downloaded.',
     errorFallback: 'An error occurred while processing the request.',
   },
@@ -54,8 +65,14 @@ const translations = {
     heroCopy:
       '기타 튜토리얼 영상에 얹기 좋은 투명/반투명 배경 악보 이미지를 마디 범위별로 나눠 ZIP으로 받을 수 있습니다.',
     zipBtn: 'ZIP 생성',
+    previewBtn: '미리보기',
+    previewHint: '현재 옵션으로 미리보기를 만듭니다. 이전/다음으로 마디를 넘길 수 있습니다.',
+    previewEmpty: '미리보기를 누른 뒤 이전/다음으로 마디를 넘길 수 있습니다.',
+    previewCaption: (start, end) => `${start}–${end}마디`,
+    previewPrev: '이전',
+    previewNext: '다음',
     sec1: '1. 악보 입력',
-    fileDrop: 'gp / gp5 / gpx / gpif / musicxml / alphatex 파일 선택',
+    fileDrop: '끌어다 놓거나 클릭 — gp / gp5 / gpx / gpif / musicxml / alphatex',
     fileSelected: name => name,
     or: '또는',
     alphaTexLabel: 'AlphaTex 붙여넣기',
@@ -86,11 +103,16 @@ const translations = {
     paddingYLabel: '상하 여백',
     stretchLabel: v => `마디 간격: ${v}`,
     hideScoreInfo: '제목/아티스트 같은 악보 헤더 숨기기',
+    showRests: '쉼표 표시',
+    sec5: '5. 미리보기',
     ready: '준비됨',
     noFile: '파일을 선택하거나 AlphaTex를 붙여넣어 주세요.',
+    unsupportedFile: '지원하지 않는 악보 파일입니다.',
     analyzing: '악보를 읽는 중…',
     analyzed: (bars, tracks) => `읽기 완료: ${bars}마디, ${tracks}트랙`,
     rendering: 'PNG 이미지를 생성하고 ZIP으로 묶는 중… 파일이 크면 시간이 걸릴 수 있어요.',
+    previewing: '미리보기를 만드는 중…',
+    previewed: '미리보기 준비됨.',
     rendered: '완료! ZIP 파일이 다운로드되었습니다.',
     errorFallback: '요청 처리 중 오류가 발생했습니다.',
   },
@@ -101,8 +123,14 @@ const translations = {
     heroCopy:
       'ギターチュートリアル動画に重ねるための透明・半透明背景の譜面画像を小節範囲ごとに分割してZIPで取得できます。',
     zipBtn: 'ZIPを出力',
+    previewBtn: 'プレビュー',
+    previewHint: '現在の設定でプレビューを生成します。前へ/次へで小節を移動できます。',
+    previewEmpty: 'プレビューを押したあと、前へ/次へで小節を移動できます。',
+    previewCaption: (start, end) => `${start}–${end}小節`,
+    previewPrev: '前へ',
+    previewNext: '次へ',
     sec1: '1. 楽譜の入力',
-    fileDrop: 'gp / gp5 / gpx / gpif / musicxml / alphatex ファイルを選択',
+    fileDrop: 'ドロップまたはクリック — gp / gp5 / gpx / gpif / musicxml / alphatex',
     fileSelected: name => name,
     or: 'または',
     alphaTexLabel: 'AlphaTexを貼り付け',
@@ -133,11 +161,16 @@ const translations = {
     paddingYLabel: '垂直パディング',
     stretchLabel: v => `小節間隔: ${v}`,
     hideScoreInfo: '楽譜ヘッダー（タイトル・アーティスト）を非表示',
+    showRests: '休符を表示',
+    sec5: '5. プレビュー',
     ready: '準備完了',
     noFile: 'ファイルを選択するか、AlphaTexを貼り付けてください。',
+    unsupportedFile: '未対応の楽譜ファイルです。',
     analyzing: '楽譜を読み込み中…',
     analyzed: (bars, tracks) => `読み込み完了: ${bars}小節, ${tracks}トラック`,
     rendering: 'PNG画像を生成してZIPにまとめ中… ファイルが大きい場合は時間がかかります。',
+    previewing: 'プレビューを生成中…',
+    previewed: 'プレビュー準備完了。',
     rendered: '完了！ZIPファイルがダウンロードされました。',
     errorFallback: 'エラーが発生しました。',
   },
@@ -164,6 +197,7 @@ const defaultOptions = {
   backgroundOpacity: 0.55,
   transparent: false,
   hideScoreInfo: true,
+  showRests: true,
 };
 
 function downloadBlob(blob, filename) {
@@ -197,6 +231,68 @@ function formatTrackName(track) {
   return `${track.index + 1}. ${track.name || `Track ${track.index + 1}`}`;
 }
 
+function pngBase64ToObjectUrl(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+}
+
+function getPreviewRange(renderOptions) {
+  const startBar = Number(renderOptions.startBar) || 1;
+  const endBar = Number(renderOptions.endBar) || startBar;
+  const barsPerImage = Number(renderOptions.barsPerImage) || 2;
+  return {
+    startBar,
+    endBar: Math.min(endBar, startBar + barsPerImage - 1)
+  };
+}
+
+function getPreviewBarRange(options, scoreInfo) {
+  const startBar = Math.max(1, Number(options.startBar) || 1);
+  const endBar = Math.max(startBar, Number(options.endBar || scoreInfo?.barCount || startBar));
+  const step = Math.max(1, Number(options.barsPerImage) || 2);
+  return { startBar, endBar, step };
+}
+
+function clampPreviewStart(previewStart, range) {
+  const raw = Number(previewStart);
+  const start = Number.isFinite(raw) ? raw : range.startBar;
+  const offset = Math.max(0, start - range.startBar);
+  const snapped = range.startBar + Math.floor(offset / range.step) * range.step;
+  return Math.min(Math.max(snapped, range.startBar), range.endBar);
+}
+
+const SCORE_FILE_EXTENSIONS = new Set([
+  '.gp',
+  '.gp3',
+  '.gp4',
+  '.gp5',
+  '.gpx',
+  '.gpif',
+  '.musicxml',
+  '.xml',
+  '.alphatex',
+  '.at',
+  '.txt'
+]);
+
+function getFileExtension(name) {
+  const match = String(name || '').toLowerCase().match(/\.[^.]+$/);
+  return match ? match[0] : '';
+}
+
+function isAllowedScoreFile(file) {
+  return Boolean(file) && SCORE_FILE_EXTENSIONS.has(getFileExtension(file.name));
+}
+
+function pickDroppedScoreFile(dataTransfer) {
+  const files = Array.from(dataTransfer?.files || []);
+  return files.find(isAllowedScoreFile) || files[0] || null;
+}
+
 const desktopApi = typeof window !== 'undefined' ? window.guitarTabSlicer : null;
 
 export default function App() {
@@ -210,13 +306,30 @@ export default function App() {
   const [selectedTracks, setSelectedTracks] = useState([0]);
   const [options, setOptions] = useState(defaultOptions);
   const [busy, setBusy] = useState(false);
+  const [previewBusy, setPreviewBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewRange, setPreviewRange] = useState(null);
+  const [previewStartBar, setPreviewStartBar] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const previewUrlRef = useRef('');
+  const previewStartBarRef = useRef(null);
+  const previewRequestIdRef = useRef(0);
+  const busyRef = useRef(false);
+  const renderPreviewRef = useRef(() => {});
+  const dragCountRef = useRef(0);
 
   const isDesktop = Boolean(desktopApi?.isDesktop);
   const uploadFile = useMemo(() => isDesktop ? null : makeUploadFile(file, alphaTex), [file, alphaTex, isDesktop]);
   const hasDesktopSource = Boolean(desktopFile) || Boolean(alphaTex.trim());
   const canSubmit = (isDesktop ? hasDesktopSource : Boolean(uploadFile)) && !busy;
   const selectedFileName = isDesktop ? desktopFile?.name : file?.name;
+  const previewNavRange = getPreviewBarRange(options, scoreInfo);
+  const currentPreviewStart = previewStartBar ?? previewNavRange.startBar;
+  const canPreviewPrev = Boolean(previewStartBar) && currentPreviewStart > previewNavRange.startBar;
+  const canPreviewNext = Boolean(previewStartBar) && currentPreviewStart + previewNavRange.step <= previewNavRange.endBar;
+  previewStartBarRef.current = previewStartBar;
+  busyRef.current = busy;
 
   const setOption = (name, value) => {
     setOptions(prev => ({ ...prev, [name]: value }));
@@ -229,11 +342,38 @@ export default function App() {
     return null;
   };
 
+  const replacePreviewUrl = nextUrl => {
+    setPreviewUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      previewUrlRef.current = nextUrl;
+      return nextUrl;
+    });
+  };
+
   const resetScoreSelection = () => {
     setScoreInfo(null);
     setSelectedTracks([0]);
     setOptions(prev => ({ ...prev, endBar: '' }));
+    replacePreviewUrl('');
+    setPreviewRange(null);
+    setPreviewStartBar(null);
   };
+
+  useEffect(() => () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+  }, []);
+
+  useEffect(() => {
+    const preventWindowFileDrop = event => {
+      event.preventDefault();
+    };
+    window.addEventListener('dragover', preventWindowFileDrop);
+    window.addEventListener('drop', preventWindowFileDrop);
+    return () => {
+      window.removeEventListener('dragover', preventWindowFileDrop);
+      window.removeEventListener('drop', preventWindowFileDrop);
+    };
+  }, []);
 
   const analyzeScore = async (scoreFile = uploadFile, selectedDesktopFile = desktopFile) => {
     const desktopSource = isDesktop ? getDesktopSource(selectedDesktopFile) : null;
@@ -266,18 +406,79 @@ export default function App() {
     }
   };
 
+  const applySelectedDesktopFile = async selected => {
+    if (!selected) return;
+    setDesktopFile(selected);
+    setFile(null);
+    setAlphaTex('');
+    resetScoreSelection();
+    await analyzeScore(null, selected);
+  };
+
+  const applyScoreFile = async nextFile => {
+    if (!nextFile) return;
+    if (!isAllowedScoreFile(nextFile)) {
+      setMessage(t.unsupportedFile);
+      return;
+    }
+
+    if (isDesktop) {
+      try {
+        const filePath = desktopApi.getPathForFile(nextFile);
+        const selected = await desktopApi.openScoreFilePath(filePath);
+        await applySelectedDesktopFile(selected);
+      } catch (error) {
+        setMessage(error.message || t.errorFallback);
+      }
+      return;
+    }
+
+    setFile(nextFile);
+    setDesktopFile(null);
+    setAlphaTex('');
+    resetScoreSelection();
+    await analyzeScore(nextFile);
+  };
+
   const selectDesktopFile = async () => {
     try {
       const selected = await desktopApi.selectScoreFile();
-      if (!selected) return;
-      setDesktopFile(selected);
-      setFile(null);
-      setAlphaTex('');
-      resetScoreSelection();
-      await analyzeScore(null, selected);
+      await applySelectedDesktopFile(selected);
     } catch (error) {
       setMessage(error.message || t.errorFallback);
     }
+  };
+
+  const handleDragEnter = event => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (busy) return;
+    dragCountRef.current += 1;
+    setDragActive(true);
+  };
+
+  const handleDragLeave = event => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragCountRef.current -= 1;
+    if (dragCountRef.current <= 0) {
+      dragCountRef.current = 0;
+      setDragActive(false);
+    }
+  };
+
+  const handleDragOver = event => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDrop = async event => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragCountRef.current = 0;
+    setDragActive(false);
+    if (busy) return;
+    await applyScoreFile(pickDroppedScoreFile(event.dataTransfer));
   };
 
   const toggleTrack = index => {
@@ -290,6 +491,95 @@ export default function App() {
     });
   };
 
+  const buildRenderOptions = () => {
+    const renderOptions = { ...options };
+    if (!renderOptions.endBar) {
+      renderOptions.endBar = String(scoreInfo?.barCount || 1);
+    }
+    return renderOptions;
+  };
+
+  const renderPreview = async (requestedStart = previewStartBarRef.current) => {
+    const desktopSource = isDesktop ? getDesktopSource() : null;
+    if (isDesktop ? !desktopSource : !uploadFile) {
+      return;
+    }
+    const requestId = previewRequestIdRef.current + 1;
+    previewRequestIdRef.current = requestId;
+    setPreviewBusy(true);
+    try {
+      const renderOptions = buildRenderOptions();
+      const range = getPreviewBarRange(renderOptions, scoreInfo);
+      const start = clampPreviewStart(requestedStart ?? range.startBar, range);
+      const previewOptions = { ...renderOptions, startBar: String(start) };
+      let nextUrl;
+
+      if (isDesktop) {
+        const result = await desktopApi.renderPreview({
+          source: desktopSource,
+          options: previewOptions,
+          selectedTracks
+        });
+        nextUrl = pngBase64ToObjectUrl(result.pngBase64);
+        if (requestId !== previewRequestIdRef.current) {
+          URL.revokeObjectURL(nextUrl);
+          return;
+        }
+        setPreviewRange({ startBar: result.startBar, endBar: result.endBar });
+      } else {
+        const form = new FormData();
+        form.append('score', uploadFile);
+        form.append('tracks', JSON.stringify(selectedTracks));
+        for (const [key, value] of Object.entries(previewOptions)) {
+          form.append(key, String(value));
+        }
+        const response = await fetch('/api/preview', { method: 'POST', body: form });
+        if (!response.ok) throw new Error(await readError(response, t.errorFallback));
+        const blob = await response.blob();
+        nextUrl = URL.createObjectURL(blob);
+        if (requestId !== previewRequestIdRef.current) {
+          URL.revokeObjectURL(nextUrl);
+          return;
+        }
+        setPreviewRange(getPreviewRange(previewOptions));
+      }
+
+      setPreviewStartBar(start);
+      replacePreviewUrl(nextUrl);
+    } catch (error) {
+      if (requestId !== previewRequestIdRef.current) return;
+      setMessage(error.message);
+    } finally {
+      if (requestId === previewRequestIdRef.current) {
+        setPreviewBusy(false);
+      }
+    }
+  };
+  renderPreviewRef.current = renderPreview;
+
+  useEffect(() => {
+    if (!scoreInfo) return;
+    const hasSource = isDesktop ? Boolean(desktopFile) || Boolean(alphaTex.trim()) : Boolean(uploadFile);
+    if (!hasSource) return;
+
+    const timer = setTimeout(() => {
+      if (busyRef.current) return;
+      renderPreviewRef.current();
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [options, selectedTracks, scoreInfo, isDesktop, desktopFile, alphaTex, uploadFile]);
+
+  const movePreview = delta => {
+    const range = getPreviewBarRange(buildRenderOptions(), scoreInfo);
+    const current = previewStartBar ?? range.startBar;
+    if (previewStartBar == null) {
+      renderPreview(range.startBar);
+      return;
+    }
+    renderPreview(current + delta * range.step);
+  };
+
   const renderZip = async () => {
     const desktopSource = isDesktop ? getDesktopSource() : null;
     if (isDesktop ? !desktopSource : !uploadFile) {
@@ -299,10 +589,7 @@ export default function App() {
     setBusy(true);
     setMessage(t.rendering);
     try {
-      const renderOptions = { ...options };
-      if (!renderOptions.endBar) {
-        renderOptions.endBar = String(scoreInfo?.barCount || 1);
-      }
+      const renderOptions = buildRenderOptions();
 
       if (isDesktop) {
         const result = await desktopApi.renderZip({
@@ -376,7 +663,16 @@ export default function App() {
           <div className="card upload-card">
             <h2>{t.sec1}</h2>
             {isDesktop ? (
-              <button type="button" className="file-drop file-drop-button" onClick={selectDesktopFile} disabled={busy}>
+              <button
+                type="button"
+                className={`file-drop file-drop-button${dragActive ? ' is-dragover' : ''}`}
+                onClick={selectDesktopFile}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                disabled={busy}
+              >
                 <span className="file-drop-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -387,18 +683,21 @@ export default function App() {
                 <span>{selectedFileName ? t.fileSelected(selectedFileName) : t.fileDrop}</span>
               </button>
             ) : (
-              <label className="file-drop">
+              <label
+                className={`file-drop${dragActive ? ' is-dragover' : ''}`}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
                 <input
                   type="file"
                   accept=".gp,.gp3,.gp4,.gp5,.gpx,.gpif,.musicxml,.xml,.alphatex,.at,.txt"
                   onChange={event => {
                     const next = event.target.files?.[0] || null;
-                    setFile(next);
-                    setDesktopFile(null);
-                    if (next) setAlphaTex('');
-                    resetScoreSelection();
+                    event.target.value = '';
                     if (next) {
-                      analyzeScore(next);
+                      applyScoreFile(next);
                     } else {
                       setMessage('');
                     }
@@ -660,6 +959,55 @@ export default function App() {
               />
               <span>{t.hideScoreInfo}</span>
             </label>
+
+            <label className="check-row standalone">
+              <input
+                type="checkbox"
+                checked={options.showRests}
+                onChange={event => setOption('showRests', event.target.checked)}
+              />
+              <span>{t.showRests}</span>
+            </label>
+          </div>
+
+          <div className="card preview-card">
+            <div className="preview-head">
+              <h2>{t.sec5}</h2>
+              <span>
+                {previewRange
+                  ? t.previewCaption(previewRange.startBar, previewRange.endBar)
+                  : t.previewHint}
+              </span>
+              {previewBusy ? <span className="spinner" aria-hidden="true" /> : null}
+              <button className="secondary" onClick={() => renderPreview()} disabled={!canSubmit}>
+                {t.previewBtn}
+              </button>
+            </div>
+            <div className="preview-nav">
+              <button
+                type="button"
+                className="secondary preview-nav-btn"
+                onClick={() => movePreview(-1)}
+                disabled={!canSubmit || !canPreviewPrev}
+              >
+                {t.previewPrev}
+              </button>
+              <button
+                type="button"
+                className="secondary preview-nav-btn"
+                onClick={() => movePreview(1)}
+                disabled={!canSubmit || !canPreviewNext}
+              >
+                {t.previewNext}
+              </button>
+            </div>
+            <div className={`preview-frame${previewUrl ? '' : ' empty'}${previewBusy ? ' is-loading' : ''}`}>
+              {previewUrl ? (
+                <img src={previewUrl} alt={t.previewBtn} />
+              ) : (
+                <p className="hint">{t.previewEmpty}</p>
+              )}
+            </div>
           </div>
         </section>
 
