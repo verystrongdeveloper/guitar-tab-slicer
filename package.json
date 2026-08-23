@@ -1,6 +1,6 @@
 {
   "name": "guitar-tab-slicer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "main": "electron/main.mjs",
@@ -28,16 +28,16 @@
     "@coderline/alphaskia-windows": "^3.5.147"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^6.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
     "cors": "^2.8.6",
-    "electron": "^42.5.0",
-    "electron-builder": "^26.15.3",
+    "electron": "^33.2.1",
+    "electron-builder": "^24.13.3",
     "express": "^5.2.1",
     "multer": "^2.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "vite": "^8.1.0",
+    "vite": "^6.0.11",
     "wait-on": "^9.0.10"
   },
   "engines": {

@@ -7,6 +7,7 @@ import multer from 'multer';
 import JSZip from 'jszip';
 import * as alphaSkia from '@coderline/alphaskia';
 import * as alphaTab from '@coderline/alphatab';
+import { disconnectIncomingNoteLinks, prepareScoreForRender } from './score-render-prep.mjs';
 
 const PORT = Number(process.env.PORT || 3001);
 const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 30 * 1024 * 1024);
@@ -309,6 +310,7 @@ function getCenteredXOffset(outputWidth, renderedWidth) {
 }
 
 async function renderChunkToPng(score, trackIndexes, options, chunk) {
+  disconnectIncomingNoteLinks(score, chunk.startBar, chunk.endBar);
   applyChunkScoreDisplayOptions(score, options, chunk);
   const settings = createRenderSettings(options, chunk);
   const renderer = new alphaTab.rendering.ScoreRenderer(settings);
@@ -527,6 +529,7 @@ app.post('/api/render', upload.single('score'), async (req, res) => {
     const trackIndexes = parseTracks(req.body.tracks, score);
 
     applyScoreDisplayOptions(score, options);
+    prepareScoreForRender(score, options, trackIndexes);
 
     const chunks = buildChunks(options.startBar, options.endBar, options.barsPerImage);
     const zip = new JSZip();
@@ -576,6 +579,7 @@ app.post('/api/preview', upload.single('score'), async (req, res) => {
     }
 
     applyScoreDisplayOptions(score, options);
+    prepareScoreForRender(score, options, trackIndexes);
     const png = await renderChunkToPng(score, trackIndexes, options, chunk);
 
     res.setHeader('Content-Type', 'image/png');
