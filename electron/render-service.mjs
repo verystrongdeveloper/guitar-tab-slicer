@@ -4,7 +4,7 @@ import path from 'node:path';
 import JSZip from 'jszip';
 import * as alphaSkia from '@coderline/alphaskia';
 import * as alphaTab from '@coderline/alphatab';
-import { disconnectIncomingNoteLinks, prepareScoreForRender } from '../server/score-render-prep.mjs';
+import { disconnectIncomingNoteLinks, prepareScoreForRender } from './score-render-prep.mjs';
 
 export const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 30 * 1024 * 1024);
 export const MAX_ALPHA_TEX_CHARS = Number(process.env.MAX_ALPHA_TEX_CHARS || 1_000_000);

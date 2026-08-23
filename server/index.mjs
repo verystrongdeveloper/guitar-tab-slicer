@@ -7,7 +7,7 @@ import multer from 'multer';
 import JSZip from 'jszip';
 import * as alphaSkia from '@coderline/alphaskia';
 import * as alphaTab from '@coderline/alphatab';
-import { disconnectIncomingNoteLinks, prepareScoreForRender } from './score-render-prep.mjs';
+import { disconnectIncomingNoteLinks, prepareScoreForRender } from '../electron/score-render-prep.mjs';
 
 const PORT = Number(process.env.PORT || 3001);
 const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 30 * 1024 * 1024);
