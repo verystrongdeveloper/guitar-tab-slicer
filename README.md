@@ -4,6 +4,8 @@
 
 Guitar Tab Slicer is a desktop app for slicing Guitar Pro and AlphaTex scores into PNG overlays for video editing. Select a score file or paste AlphaTex text, choose the bar range and style options, then export a ZIP file containing bar-based PNG slices and `manifest.json`.
 
+![Guitar Tab Slicer UI](docs/screenshot.png)
+
 ## Features
 
 - Score input for `.gp`, `.gp3`, `.gp4`, `.gp5`, `.gpx`, `.gpif`, `.musicxml`, `.xml`, `.alphatex`, `.at`, `.txt`
@@ -32,6 +34,12 @@ Download the Windows build from the release page.
 3. After analysis, choose the bar range and tracks.
 4. Adjust notation, colors, transparency, and image size options.
 5. Click `Export ZIP` to save the PNG overlay ZIP file.
+
+## Usage Example
+
+Exported PNGs are meant to sit over guitar tutorial videos as a tab overlay.
+
+![Tab overlay on a guitar video](docs/screenshot2.png)
 
 The generated ZIP contains files like this:
 

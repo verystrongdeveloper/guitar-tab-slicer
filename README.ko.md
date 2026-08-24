@@ -4,6 +4,8 @@
 
 Guitar Tab Slicer는 Guitar Pro/AlphaTex 악보를 영상 편집용 PNG 오버레이로 잘라내는 데스크톱 앱입니다. 악보 파일이나 AlphaTex 텍스트를 넣고, 원하는 마디 범위와 스타일을 선택하면 마디 단위 PNG 파일과 `manifest.json`이 포함된 ZIP 파일을 생성합니다.
 
+![Guitar Tab Slicer 화면](docs/screenshot.png)
+
 ## 주요 기능
 
 - `.gp`, `.gp3`, `.gp4`, `.gp5`, `.gpx`, `.gpif`, `.musicxml`, `.xml`, `.alphatex`, `.at`, `.txt` 악보 입력
@@ -32,6 +34,12 @@ Guitar Tab Slicer는 Guitar Pro/AlphaTex 악보를 영상 편집용 PNG 오버�
 3. 악보 분석 후 마디 범위와 트랙을 선택합니다.
 4. 표기 방식, 색상, 투명도, 이미지 크기 옵션을 조정합니다.
 5. `Export ZIP` 버튼을 눌러 PNG 오버레이 ZIP 파일을 저장합니다.
+
+## 사용 예시
+
+내보낸 PNG는 기타 튜토리얼 영상 위에 탭 오버레이로 얹는 용도입니다.
+
+![기타 영상 위 탭 오버레이](docs/screenshot2.png)
 
 생성되는 ZIP에는 다음 파일이 들어갑니다.
 

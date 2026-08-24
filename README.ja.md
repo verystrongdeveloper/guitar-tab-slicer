@@ -4,6 +4,8 @@
 
 Guitar Tab Slicer は、Guitar Pro/AlphaTex のスコアを動画編集用の PNG オーバーレイに分割するデスクトップアプリです。スコアファイルまたは AlphaTex テキストを入力し、必要な小節範囲とスタイルを選択すると、小節単位の PNG ファイルと `manifest.json` を含む ZIP ファイルを生成します。
 
+![Guitar Tab Slicer 画面](docs/screenshot.png)
+
 ## 主な機能
 
 - `.gp`, `.gp3`, `.gp4`, `.gp5`, `.gpx`, `.gpif`, `.musicxml`, `.xml`, `.alphatex`, `.at`, `.txt` のスコア入力
@@ -32,6 +34,12 @@ Guitar Tab Slicer は、Guitar Pro/AlphaTex のスコアを動画編集用の PN
 3. 解析後、小節範囲とトラックを選択します。
 4. 表記モード、色、透明度、画像サイズのオプションを調整します。
 5. `Export ZIP` ボタンを押して PNG オーバーレイ ZIP ファイルを保存します。
+
+## 使用例
+
+書き出した PNG は、ギターチュートリアル動画の上にタブを重ねる用途です。
+
+![ギター動画上のタブオーバーレイ](docs/screenshot2.png)
 
 生成される ZIP には次のようなファイルが含まれます。
 
