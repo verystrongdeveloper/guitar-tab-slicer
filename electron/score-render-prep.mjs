@@ -74,9 +74,93 @@ function isOutsideChunk(note, firstIndex, lastIndex) {
   return index == null || index < firstIndex || index > lastIndex;
 }
 
+function forEachBeat(score, callback) {
+  for (const track of score.tracks || []) {
+    for (const staff of track.staves || []) {
+      for (const bar of staff.bars || []) {
+        if (!bar) continue;
+        for (const voice of bar.voices || []) {
+          if (!voice) continue;
+          for (const beat of voice.beats || []) {
+            if (beat) callback(beat);
+          }
+        }
+      }
+    }
+  }
+}
+
+function forEachNote(score, callback) {
+  forEachBeat(score, beat => {
+    for (const note of beat.notes || []) {
+      if (note) callback(note);
+    }
+  });
+}
+
+function previousNoteOnSameString(note) {
+  let current = note.beat?.previousBeat;
+  while (current) {
+    const found = (current.notes || []).find(other => other && other.string === note.string);
+    if (found) return found;
+    current = current.previousBeat;
+  }
+  return null;
+}
+
+function followNoteChain(note, getNext) {
+  let current = note;
+  const seen = new Set();
+  while (current) {
+    const next = getNext(current);
+    if (!next || next === current || seen.has(next)) break;
+    seen.add(current);
+    current = next;
+  }
+  return current;
+}
+
+function lastLetRingNote(note) {
+  const lastOnLetRing = followNoteChain(note, current => {
+    const destination = current.letRingDestination;
+    return destination && destination !== current ? destination : null;
+  });
+  return followNoteChain(lastOnLetRing, current => current.tieDestination);
+}
+
+function applyLetRingAsParentheses(score) {
+  const lastNotes = new Set();
+  forEachNote(score, note => {
+    if (!note.isLetRing) return;
+    const previous = previousNoteOnSameString(note);
+    if (previous?.isLetRing) return;
+    const last = lastLetRingNote(note);
+    if (last !== note) lastNotes.add(last);
+  });
+
+  forEachNote(score, note => {
+    if (!note.isLetRing) return;
+    note.isLetRing = false;
+    note.letRingDestination = null;
+  });
+
+  forEachBeat(score, beat => {
+    beat.isLetRing = false;
+  });
+
+  for (const note of lastNotes) {
+    note.isGhost = true;
+    if (note.isTieDestination) {
+      note.isTieDestination = false;
+      note.tieOrigin = null;
+    }
+  }
+}
+
 export function prepareScoreForRender(score, options, trackIndexes) {
   ensureCompleteBars(score);
   score.finish(new alphaTab.Settings());
+  applyLetRingAsParentheses(score);
   options.staveProfile = resolveStaveProfile(score, trackIndexes, options.staveProfile);
   applyStaveProfileVisibility(score, options.staveProfile);
 }
