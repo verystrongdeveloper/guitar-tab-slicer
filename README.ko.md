@@ -24,8 +24,8 @@ Guitar Tab Slicer는 Guitar Pro/AlphaTex 악보를 영상 편집용 PNG 오버�
 
 릴리스 페이지에서 Windows용 파일을 받을 수 있습니다.
 
-- `Guitar Tab Slicer 0.2.0.exe`: 설치 없이 실행 가능한 Windows 앱
-- `Guitar Tab Slicer 0.2.0.zip`: 압축 파일 버전
+- `Guitar Tab Slicer 0.2.2.exe`: 설치 없이 실행 가능한 Windows 앱
+- `Guitar Tab Slicer 0.2.2.zip`: 압축 파일 버전
 
 ## 사용 방법
 
